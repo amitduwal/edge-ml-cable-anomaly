@@ -1,0 +1,82 @@
+% --- Connection ---
+scopeIP = '169.254.198.168';
+scope = visadev(['TCPIP0::', scopeIP, '::inst0::INSTR']);
+scope.Timeout = 12;
+configureTerminator(scope,"LF");
+
+recordLength = 100000;   % samples per frame
+numFrames    = 50;       % number of frames
+
+try
+
+    flush(scope);
+
+    % --- Basic waveform configuration ---
+    writeline(scope,'HEADER OFF');
+    writeline(scope,'DATA:SOURCE CH1');
+    writeline(scope,'DATA:ENC SRI');
+    writeline(scope,'DATA:WIDTH 2');
+    writeline(scope,['DATA:START 1']);
+    writeline(scope,['DATA:STOP ',num2str(recordLength)]);
+
+    % --- Enable FastFrame ---
+    writeline(scope,'HOR:FASTFRAME:STATE ON');
+    writeline(scope,['HOR:FASTFRAME:COUNT ',num2str(numFrames)]);
+
+    % --- Record length ---
+    writeline(scope,['HOR:RECORDLENGTH ',num2str(recordLength)]);
+
+    % --- Single sequence acquisition ---
+    writeline(scope,'ACQUIRE:STOPAFTER SEQUENCE');
+
+    % --- Scaling values ---
+    yMult = str2double(writeread(scope,'WFMOUTPRE:YMULT?'));
+    yOff  = str2double(writeread(scope,'WFMOUTPRE:YOFF?'));
+    yZero = str2double(writeread(scope,'WFMOUTPRE:YZERO?'));
+
+    fprintf("Capturing %d frames...\n",numFrames);
+
+    % --- Start acquisition ---
+    writeline(scope,'ACQUIRE:STATE RUN');
+
+    % wait until finished
+    while str2double(writeread(scope,'ACQUIRE:STATE?')) == 1
+    end
+
+    % --- Read frames ---
+    allFrames = zeros(recordLength,numFrames);
+
+    for f = 1:numFrames
+
+        fprintf("Downloading frame %d\n",f);
+
+        writeline(scope,['DATA:FRAMESTART ',num2str(f)]);
+        writeline(scope,['DATA:FRAMESTOP ',num2str(f)]);
+
+        write(scope,'CURVE?','string');
+        raw = readbinblock(scope,'int16');
+
+        volts = ((double(raw)-yOff)*yMult)+yZero;
+
+        allFrames(:,f) = volts;
+
+    end
+
+    % --- Plot first frame ---
+    figure;
+    plot(allFrames(:));
+    title('FastFrame Capture - Frame 1');
+    ylabel('Voltage');
+    grid on;
+    fprintf("completed")
+
+catch ME
+    fprintf("Error: %s\n",ME.message);
+end
+
+% 10. Clean Up (Crucial for preventing future timeouts)
+writeline(scope, 'HOR:FASTFRAME:STATE OFF'); % Turn off FastFrame to return to normal mode
+% writeline(scope, 'ACQUIRE:STATE RUN');       % Set scope back to continuous run if desired
+% delete(scope); % Close the VISA connection
+clear scope;   % Remove the object from the workspace
+fprintf("Operation complete. Connection closed.\n");
