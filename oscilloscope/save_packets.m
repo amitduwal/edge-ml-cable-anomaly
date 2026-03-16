@@ -17,7 +17,7 @@ scope.Timeout = 60;
 configureTerminator(scope,"LF");
 
 % Number of packets (frames) to capture
-numFrames = 1000;
+numFrames = 2500;
 
 % Number of samples stored per packet
 recordLength = 250000;
@@ -31,8 +31,8 @@ verticalScale = 0.5;
 % -------------------------------
 % MAT FILE SETUP
 % -------------------------------
-filename = 'E:\Thesis\thesis_code\data\oscilloscope\ethernet_packets_1_1000.mat';
-% % filename = 'E:\Thesis\thesis_code\data\oscilloscope\reference_packet.mat';
+filename = 'E:\Thesis\thesis_code\data\oscilloscope\ethernet_packets_7501_10000.mat';
+% % % filename = 'E:\Thesis\thesis_code\data\oscilloscope\reference_packet.mat';
 
 
 % Initialize data structure
