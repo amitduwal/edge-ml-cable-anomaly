@@ -17,7 +17,7 @@ scope.Timeout = 60;
 configureTerminator(scope,"LF");
 
 % Number of packets (frames) to capture
-numFrames = 1000;
+numFrames = 1;
 
 % Number of samples stored per packet
 recordLength = 250000;
@@ -31,8 +31,8 @@ verticalScale = 0.5;
 % -------------------------------
 % MAT FILE SETUP
 % -------------------------------
-filename = 'E:\Thesis\thesis_code\data\oscilloscope\ethernet_packets_1_1000.mat';
-% % filename = 'E:\Thesis\thesis_code\data\oscilloscope\reference_packet.mat';
+% filename = 'E:\Thesis\thesis_code\data\oscilloscope\ethernet_packets_1_1000.mat';
+filename = 'E:\Thesis\thesis_code\data\oscilloscope\reference_packet.mat';
 
 
 % Initialize data structure
@@ -128,6 +128,14 @@ try
     % YZERO is voltage reference offset
     yZero = str2double(writeread(scope,'WFMOUTPRE:YZERO?'));
 
+    % -------------------------------
+    % PLOT INITIALIZATION
+    % -------------------------------
+
+    figure(1);     % Create figure window
+    clf;           % Clear previous plots
+    hold on;       % Allow multiple packet plots
+
     for i = 1:numFrames
         fprintf("Downloading packet %d\n",i);
     
@@ -150,6 +158,7 @@ try
     
         % Store in array
         packets(:,i) = volt;
+        plot(volt)
     end
     % Save waveform data and metadata
     save(filename,'packets','metadata','-v7.3');  % v7.3 is recommended for large arrays
