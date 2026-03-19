@@ -7,7 +7,7 @@ port = 5000;
 numFrames = 2500;
 recordLengthRP = 16384; % Red Pitaya fixed buffer size
 sampleRateRP = 125e6;   % Standard RP sampling rate (125 MHz)
-filename = 'E:\Thesis\thesis_code\data\rp\rp_ethernet_packets_2501_5000.mat';
+filename = 'E:\Thesis\thesis_code\data\rp\rp_ethernet_packets_10001_12500.mat';
 triggerLevel = -0.25;
 
 % --- Preallocate Data Structure ---
