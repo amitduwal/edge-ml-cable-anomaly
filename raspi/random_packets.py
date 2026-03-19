@@ -7,6 +7,10 @@ IFACE = "eth0"
 
 print(f"--- Sending random packets continuously on {IFACE} ---")
 
+from scapy.all import Ether, IP, TCP
+import random
+import os
+
 def generate_packet():
     return (
         Ether(
@@ -22,7 +26,7 @@ def generate_packet():
             dport=random.choice([80, 443, 22, 8080]),
             flags=random.choice(["S", "PA", "FA"])
         ) /
-        os.urandom(random.randint(20, 200))  # random payload
+        os.urandom(94)  # ✅ fixed payload length
     )
 
 try:
