@@ -31,7 +31,7 @@ verticalScale = 0.5;
 % -------------------------------
 % MAT FILE SETUP
 % -------------------------------
-filename = 'E:\Thesis\thesis_code\data\oscilloscope\ethernet_packets_7501_10000.mat';
+filename = 'E:\Thesis\thesis_code\data\oscilloscope\ethernet_packets_10001_12500.mat';
 % % % filename = 'E:\Thesis\thesis_code\data\oscilloscope\reference_packet.mat';
 
 

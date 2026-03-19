@@ -1,25 +1,32 @@
-%% Red Pitaya 5-Packet Capture Loop
+%% Red Pitaya 5-Packet Capture & .mat Export
 clear; clc;
 
-% Connection Settings
+% --- Configuration ---
 IP = '169.254.149.74';
 port = 5000;
-numFrames = 5;
-bufferSize = 16384; % Red Pitaya standard buffer length
+numFrames = 2500;
 recordLengthRP = 16384; % Red Pitaya fixed buffer size
+sampleRateRP = 125e6;   % Standard RP sampling rate (125 MHz)
+filename = 'E:\Thesis\thesis_code\data\rp\rp_ethernet_packets_2501_5000.mat';
+triggerLevel = -0.25;
 
-
-% Preallocate storage: rows = samples, columns = packets
-packetsRP = zeros(bufferSize, numFrames);
+% --- Preallocate Data Structure ---
+packetsRP = zeros(recordLengthRP, numFrames);
+metadataRP.sample_rate = sampleRateRP;
+metadataRP.record_length = recordLengthRP;
+metadataRP.num_frames = numFrames;
+metadataRP.timestamp = datetime('now');
+metadataRP.source = 'Red Pitaya STEMlab 125-14';
+metadataRP.trigger_level = triggerLevel;
 
 try
     % Create TCP connection
     rp = tcpclient(IP, port);
     configureTerminator(rp, "CR/LF");
 
-    % Global Configuration
+    % Global Hardware Setup
     writeline(rp, 'ACQ:RST');
-    writeline(rp, 'ACQ:DEC 1');
+    writeline(rp, 'ACQ:DEC 1'); % 125MS/s
     writeline(rp, 'ACQ:DATA:FORMAT BIN');
     writeline(rp, 'ACQ:DATA:UNITS VOLTS');
     writeline(rp, 'ACQ:TRIG:LEV -0.25');
@@ -27,26 +34,23 @@ try
     fprintf('Starting capture of %d packets...\n', numFrames);
 
     for i = 1:numFrames
-        % Start acquisition for this frame
+        % Arm the trigger
         writeline(rp, 'ACQ:START');
-        
-        % Set trigger source (must be done AFTER ACQ:START)
-        writeline(rp, 'ACQ:TRIG CH1_NE');
-        writeline(rp, 'ACQ:TRIG:DLY 8192');
+        writeline(rp, 'ACQ:TRIG CH1_NE'); % Trigger on negative edge
+        writeline(rp, 'ACQ:TRIG:DLY 8192'); % Set trigger to middle of buffer
 
-        % Polling for trigger
+        % Wait for trigger (Polling)
         triggered = false;
         while ~triggered
             status = writeread(rp, 'ACQ:TRIG:STAT?');
-            if contains(status, 'TD') % Trigger Detected/Triggered
+            if contains(status, 'TD')
                 triggered = true;
             end
         end
 
-        % Small pause to ensure buffer is filled post-trigger
+        % Small delay to ensure the buffer completes the post-trigger fill
         pause(0.01);
-
-       
+        
         % Request Data
         writeline(rp, 'ACQ:SOUR1:DATA?');
         
@@ -72,19 +76,21 @@ try
 
         % Store data
         packetsRP(:, i) = double(rawData(1:recordLengthRP));
+        
+        fprintf('Frame %d/%d captured via Binary.\n', i, numFrames);
     end
 
-    % Visualization of all packets
-    figure;
-    plot(packetsRP);
-    title('Red Pitaya: 5 Captured Ethernet Packets');
-    xlabel('Samples');
-    ylabel('Voltage (V)');
-    grid on;
+    % --- Save to .mat File ---
+    % Mapping to your existing variable naming convention
+    packets = packetsRP; 
+    metadata = metadataRP;
+    
+    save(filename, 'packets', 'metadata', '-v7.3');
+    fprintf('Success! Data saved to: %s\n', filename);
 
 catch ME
-    fprintf('Error occurred: %s\n', ME.message);
+    fprintf('Critical Error: %s\n', ME.message);
 end
 
-% Clean up
+% Close connection
 clear rp;
