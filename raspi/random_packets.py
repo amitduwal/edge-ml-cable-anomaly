@@ -32,11 +32,11 @@ def generate_packet():
 try:
     while True:
         batch = [generate_packet() for _ in range(100)]
-        print(f"Sending batch of 100 random packets...")
-        print(f"Packet details:")
-        for pkt in batch[:5]:  # Print details of the first 5 packets
-            print(f"  {pkt[IP].src} -> {pkt[IP].dst} | TCP sport: {pkt[TCP].sport} dport: {pkt[TCP].dport} flags: {pkt[TCP].flags}")
-            print(f"  Payload size: {len(pkt[TCP].payload)} bytes")
+        # print(f"Sending batch of 100 random packets...")
+        #print(f"Packet details:")
+        #for pkt in batch[:5]:  # Print details of the first 5 packets
+        #   print(f"  {pkt[IP].src} -> {pkt[IP].dst} | TCP sport: {pkt[TCP].sport} dport: {pkt[TCP].dport} flags: {pkt[TCP].flags}")
+        #   print(f"  Payload size: {len(pkt[TCP].payload)} bytes")
         sendp(batch, iface=IFACE, verbose=False)
 
 except KeyboardInterrupt:
