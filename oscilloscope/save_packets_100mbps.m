@@ -11,13 +11,13 @@ scopeIP = '169.254.198.168';
 scope = visadev(['TCPIP0::', scopeIP, '::inst0::INSTR']);
 
 % Increase timeout because waveform transfers can take time
-scope.Timeout = 60;
+scope.Timeout = 120;
 
 % Configure communication line termination to LF (Tektronix standard)
 configureTerminator(scope,"LF");
 
 % Number of packets (frames) to capture
-numFrames = 5;
+numFrames = 1000;
 
 % Number of samples stored per packet
 recordLength = 250000;
@@ -25,13 +25,15 @@ recordLength = 250000;
 sampleRate = 1250e6; 
 horizontalScale = 40e-6;
 horizontalPosition = 30;
-triggerLevel = -0.5;
-verticalScale = 0.25;
+triggerLevel = 1.5;
+verticalScale = 0.5;
 
 % -------------------------------
 % MAT FILE SETUP
 % -------------------------------
-filename = 'ethernet_packets.mat';
+filename = 'E:\Thesis\thesis_code\data\oscilloscope\ethernet_packets_10_5cm_water.mat';
+% % % filename = 'E:\Thesis\thesis_code\data\oscilloscope\reference_packet.mat';
+
 
 % Initialize data structure
 packets = zeros(recordLength, numFrames);  % preallocate for speed
@@ -49,7 +51,7 @@ try
     writeline(scope,'HEADER OFF');
 
     % Select waveform source channel
-    writeline(scope,'DATA:SOURCE CH2');
+    writeline(scope,'DATA:SOURCE CH1');
 
     % Set waveform encoding to Signed Integer (fastest binary format)
     writeline(scope,'DATA:ENC SRI');
@@ -59,6 +61,8 @@ try
 
     % Set vertical scale of Channel 1 to 500 mV/div
     writeline(scope, ['CH1:SCALE ', num2str(verticalScale)]);
+    writeline(scope,'SELECT:CH2 ON');
+    writeline(scope,'CH2:SCALE 1.0'); % Set a reasonable scale for the pulse
 
     % --- Horizontal & Acquisition Setup ---
     writeline(scope, 'HOR:MODE MAN');
@@ -85,17 +89,19 @@ try
     % TRIGGER CONFIGURATION
     % -------------------------------
 
+    
+
+    % Trigger source is channel 1
+    writeline(scope,'TRIG:A:EDGE:SOU CH2');
+
     % Set trigger type to edge trigger
     writeline(scope,'TRIG:A:TYPE EDGE');
 
-    % Trigger source is channel 1
-    writeline(scope,'TRIG:A:EDGE:SOU CH1');
-
     % Trigger on falling edge (packet start often dips negative)
-    writeline(scope,'TRIG:A:EDGE:SLO FALL');
+    writeline(scope,'TRIG:A:EDGE:SLO RISE');
 
     % Set trigger voltage level to -0.5 V
-    writeline(scope,['TRIG:A:LEV ', num2str(triggerLevel)]);
+    writeline(scope,['TRIG:A:LEV:CH2 ', num2str(triggerLevel)]);
 
     % -------------------------------
     % START ACQUISITION
@@ -111,7 +117,7 @@ try
     fprintf("Waiting for %d Ethernet packets...\n",numFrames);
 
     % Wait a few seconds for packets to arrive
-    pause(3);
+    pause(25);
 
     % -------------------------------
     % READ SCALING PARAMETERS
@@ -126,51 +132,32 @@ try
     % YZERO is voltage reference offset
     yZero = str2double(writeread(scope,'WFMOUTPRE:YZERO?'));
 
-    % -------------------------------
-    % PLOT INITIALIZATION
-    % -------------------------------
-
-    figure(1);     % Create figure window
-    clf;           % Clear previous plots
-    hold on;       % Allow multiple packet plots
-
-    % -------------------------------
-    % DOWNLOAD EACH PACKET FRAME
-    % -------------------------------
-
     for i = 1:numFrames
-
-        % Select which FastFrame segment to read
+        fprintf("Downloading packet %d\n",i);
+    
+        % Select FastFrame segment
         writeline(scope,['DATA:FRAMESTART ',num2str(i)]);
         writeline(scope,['DATA:FRAMESTOP ',num2str(i)]);
-
-        % Define data region inside the frame
+    
+        % Define data region
         writeline(scope,'DATA:START 1');
         writeline(scope,['DATA:STOP ',num2str(recordLength)]);
-
-        % Request waveform data from scope
+    
+        % Request waveform
         write(scope,'CURVE?','string');
-
-        % Read binary block data (16-bit integers)
+    
+        % Read binary waveform
         raw = readbinblock(scope,'int16');
-
-        % Convert ADC values to voltage using scaling parameters
+    
+        % Convert ADC counts to volts
         volt = ((double(raw) - yOff) * yMult) + yZero;
-
-        % Plot captured packet waveform
-        plot(volt);
-
+    
+        % Store in array
+        packets(:,i) = volt;
     end
-
-    % -------------------------------
-    % PLOT SETTINGS
-    % -------------------------------
-
-    title('Captured Ethernet Packets (Trigger -0.5V)');
-    ylabel('Voltage (V)');
-    xlabel('Sample Number');
-    grid on;
-
+    % Save waveform data and metadata
+    save(filename,'packets','metadata','-v7.3');  % v7.3 is recommended for large arrays
+    fprintf("All packets saved to %s\n", filename);
 catch ME
 
     % Display any communication or acquisition errors

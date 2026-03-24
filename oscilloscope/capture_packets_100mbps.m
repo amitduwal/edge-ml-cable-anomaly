@@ -1,5 +1,5 @@
 % -------------------------------
-% Tektronix MSO64B Packet Capture
+% Tektronix MSO64B Packet Capture for 100Mbps
 % Capture 5 Ethernet packets using FastFrame
 % Trigger level = -0.5 V
 % -------------------------------
@@ -25,7 +25,7 @@ recordLength = 250000;
 sampleRate = 1250e6; 
 horizontalScale = 40e-6;
 horizontalPosition = 30;
-triggerLevel = -0.5;
+triggerLevel = 0.4;
 verticalScale = 0.25;
 
 % -------------------------------
@@ -49,7 +49,7 @@ try
     writeline(scope,'HEADER OFF');
 
     % Select waveform source channel
-    writeline(scope,'DATA:SOURCE CH2');
+    writeline(scope,'DATA:SOURCE CH1');
 
     % Set waveform encoding to Signed Integer (fastest binary format)
     writeline(scope,'DATA:ENC SRI');
@@ -88,14 +88,20 @@ try
     % Set trigger type to edge trigger
     writeline(scope,'TRIG:A:TYPE EDGE');
 
-    % Trigger source is channel 1
-    writeline(scope,'TRIG:A:EDGE:SOU CH1');
+    % Trigger source is channel 2
+    writeline(scope,'TRIG:A:EDGE:SOU CH2');
 
     % Trigger on falling edge (packet start often dips negative)
-    writeline(scope,'TRIG:A:EDGE:SLO FALL');
+    writeline(scope,'TRIG:A:EDGE:SLO RISE');
 
-    % Set trigger voltage level to -0.5 V
-    writeline(scope,['TRIG:A:LEV ', num2str(triggerLevel)]);
+    % Ensure CH2 is set up for the trigger
+    writeline(scope, 'CH2:PRObe:GAIN 1.0'); % Ensure no attenuation mismatch
+    writeline(scope, 'CH2:COUPling DC');
+    writeline(scope, 'TRIG:A:MODE NORMAL') % CRITICAL: Do not use AUTO
+
+
+    % Set trigger voltage level to 0.5 V
+    writeline(scope,['TRIG:A:LEV:CH2 ', num2str(triggerLevel)]);
 
     % -------------------------------
     % START ACQUISITION
