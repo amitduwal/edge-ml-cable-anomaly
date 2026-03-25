@@ -7,7 +7,7 @@ import time
 
 # --- Configuration ---
 IFACE = "eth0"
-TRIGGER_PIN = 17 
+TRIGGER_PIN = 17
 
 # Initialize GPIO
 trigger = OutputDevice(TRIGGER_PIN)
@@ -29,30 +29,34 @@ def generate_packet():
             dport=random.choice([80, 443, 22, 8080]),
             flags=random.choice(["S", "PA", "FA"])
         ) /
-        os.urandom(94) 
+        os.urandom(94)
     )
 
 print(f"--- Sending individual triggered packets on {IFACE} ---")
 
+count = 0
+
 try:
-    while True:
+    while count < 100:  # Limit to 1000 packets for testing
         # 1. Create the packet first (don't waste trigger time on generation)
         pkt = generate_packet()
-        
+
         # 2. 🔴 Trigger HIGH
         trigger.on()
-        
+
         # 3. 📡 Send EXACTLY one packet
         sendp(pkt, iface=IFACE, verbose=False)
-        
+
         # 4. 🔵 Trigger LOW
         trigger.off()
-        
+
         # 5. Optional: Small gap so the scope can reset/trigger again
-        time.sleep(0.0001) 
+        time.sleep(1)
+        count += 1
 
 except KeyboardInterrupt:
-    print("\nStream stopped.")
+    print(f"\nStream stopped after {count} packets.")
 finally:
+    print(f"\n {count} packets.")
     trigger.off()
     sys.exit()
