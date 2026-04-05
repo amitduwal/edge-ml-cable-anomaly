@@ -1,169 +1,78 @@
 % -------------------------------
-% Tektronix MSO64B Packet Capture
-% Capture 5 Ethernet packets using FastFrame
-% Trigger level = -0.5 V
+% Tektronix MSO64B Normal Capture (One-by-One)
 % -------------------------------
 
 % IP address of the oscilloscope
 scopeIP = '169.254.198.168';
-
-% Create VISA connection using Ethernet (TCPIP)
 scope = visadev(['TCPIP0::', scopeIP, '::inst0::INSTR']);
-
-% Increase timeout because waveform transfers can take time
-scope.Timeout = 120;
-
-% Configure communication line termination to LF (Tektronix standard)
+scope.Timeout = 60;
 configureTerminator(scope,"LF");
 
-% Number of packets (frames) to capture
+% Capture Settings
 numFrames = 1000;
-
-% Number of samples stored per packet
 recordLength = 250000;
-
 sampleRate = 1250e6; 
-horizontalScale = 40e-6;
-horizontalPosition = 30;
 triggerLevel = 1.5;
 verticalScale = 0.5;
 
-% -------------------------------
-% MAT FILE SETUP
-% -------------------------------
-filename = 'E:\Thesis\thesis_code\data\oscilloscope\ethernet_packets_10_5cm_water.mat';
-% % % filename = 'E:\Thesis\thesis_code\data\oscilloscope\reference_packet.mat';
+filename = 'E:\Thesis\thesis_code\data\oscilloscope\ethernet_packets_normal.mat';
 
-
-% Initialize data structure
-packets = zeros(recordLength, numFrames);  % preallocate for speed
+% Preallocate
+packets = zeros(recordLength, numFrames);
 metadata.sample_rate = sampleRate;
-metadata.trigger_level = triggerLevel;
-metadata.record_length = recordLength;
-metadata.num_frames = numFrames;
 
 try
-
-    % Clear any unread data in the scope buffer
     flush(scope);
-
-    % Disable header text in responses (faster data transfers)
     writeline(scope,'HEADER OFF');
-
-    % Select waveform source channel
     writeline(scope,'DATA:SOURCE CH1');
-
-    % Set waveform encoding to Signed Integer (fastest binary format)
     writeline(scope,'DATA:ENC SRI');
-
-    % Set waveform width to 2 bytes (16-bit data)
     writeline(scope,'DATA:WIDTH 2');
 
-    % Set vertical scale of Channel 1 to 500 mV/div
+    % --- Horizontal & Vertical Setup ---
     writeline(scope, ['CH1:SCALE ', num2str(verticalScale)]);
-    writeline(scope,'SELECT:CH2 ON');
-    writeline(scope,'CH2:SCALE 1.0'); % Set a reasonable scale for the pulse
-
-    % --- Horizontal & Acquisition Setup ---
     writeline(scope, 'HOR:MODE MAN');
+    writeline(scope, ['HOR:RECORDLENGTH ', num2str(recordLength)]);
     writeline(scope, ['HOR:MODE:SAMPLERATE ', num2str(sampleRate)]);
-    writeline(scope, ['HOR:SCALE ', num2str(horizontalScale)]);
 
-    writeline(scope, ['HOR:POS ', num2str(horizontalPosition)]);
-
-
-    % -------------------------------
-    % FASTFRAME CONFIGURATION
-    % -------------------------------
-
-    % Enable FastFrame segmented acquisition
-    writeline(scope,'HOR:FASTFRAME:STATE ON');
-
-    % Define number of segments (each segment captures one trigger event)
-    writeline(scope,['HOR:FASTFRAME:COUNT ',num2str(numFrames)]);
-
-    % Define number of samples stored in each segment
-    writeline(scope,['HOR:RECORDLENGTH ',num2str(recordLength)]);
-
-    % -------------------------------
-    % TRIGGER CONFIGURATION
-    % -------------------------------
-
-    
-
-    % Trigger source is channel 1
+    % --- Trigger Setup ---
     writeline(scope,'TRIG:A:EDGE:SOU CH2');
-
-    % Set trigger type to edge trigger
     writeline(scope,'TRIG:A:TYPE EDGE');
-
-    % Trigger on falling edge (packet start often dips negative)
     writeline(scope,'TRIG:A:EDGE:SLO RISE');
-
-    % Set trigger voltage level to -0.5 V
     writeline(scope,['TRIG:A:LEV:CH2 ', num2str(triggerLevel)]);
 
-    % -------------------------------
-    % START ACQUISITION
-    % -------------------------------
+    % Ensure FastFrame is OFF
+    writeline(scope,'HOR:FASTFRAME:STATE OFF');
 
-    % Stop acquisition after the required number of triggers
-    writeline(scope,'ACQ:STOPAFTER SEQUENCE');
-
-    % Start acquisition
-    writeline(scope,'ACQ:STATE RUN');
-
-    % Inform user
-    fprintf("Waiting for %d Ethernet packets...\n",numFrames);
-
-    % Wait a few seconds for packets to arrive
-    pause(25);
-
-    % -------------------------------
-    % READ SCALING PARAMETERS
-    % -------------------------------
-
-    % YMULT converts ADC counts to volts
+    % Read scaling parameters once (assuming they don't change during the loop)
+    % We need to trigger once or be in a ready state to get valid preamble
     yMult = str2double(writeread(scope,'WFMOUTPRE:YMULT?'));
-
-    % YOFF is the ADC offset
     yOff  = str2double(writeread(scope,'WFMOUTPRE:YOFF?'));
-
-    % YZERO is voltage reference offset
     yZero = str2double(writeread(scope,'WFMOUTPRE:YZERO?'));
 
     for i = 1:numFrames
-        fprintf("Downloading packet %d\n",i);
-    
-        % Select FastFrame segment
-        writeline(scope,['DATA:FRAMESTART ',num2str(i)]);
-        writeline(scope,['DATA:FRAMESTOP ',num2str(i)]);
-    
-        % Define data region
-        writeline(scope,'DATA:START 1');
-        writeline(scope,['DATA:STOP ',num2str(recordLength)]);
-    
-        % Request waveform
-        write(scope,'CURVE?','string');
-    
-        % Read binary waveform
-        raw = readbinblock(scope,'int16');
-    
-        % Convert ADC counts to volts
-        volt = ((double(raw) - yOff) * yMult) + yZero;
-    
-        % Store in array
-        packets(:,i) = volt;
+        fprintf("Capturing and downloading packet %d of %d...\n", i, numFrames);
+        
+        % Set to stop after one trigger
+        writeline(scope, 'ACQ:STOPAFTER SEQUENCE');
+        writeline(scope, 'ACQ:STATE RUN');
+        
+        % CRITICAL: Wait for the scope to actually finish the capture
+        % The script will pause here until a trigger happens.
+        fprintf("Waiting for trigger...\n");
+        opcResponse = writeread(scope, '*OPC?'); 
+        
+        % Only after *OPC? returns '1' do we ask for the data
+        writeline(scope, 'CURVE?');
+        raw = readbinblock(scope, 'int16');
+        packets(:,i) = ((double(raw) - yOff) * yMult) + yZero;
+        pause(0.2)
     end
-    % Save waveform data and metadata
-    save(filename,'packets','metadata','-v7.3');  % v7.3 is recommended for large arrays
-    fprintf("All packets saved to %s\n", filename);
+
+    save(filename,'packets','metadata','-v7.3');
+    fprintf("Data saved to %s\n", filename);
+
 catch ME
-
-    % Display any communication or acquisition errors
     fprintf("Error: %s\n",ME.message);
-
 end
-writeline(scope, 'HOR:FASTFRAME:STATE OFF'); % Turn off FastFrame to return to normal mode
-% Close connection and release VISA object
+
 clear scope;
