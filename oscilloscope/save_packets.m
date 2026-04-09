@@ -17,7 +17,7 @@ scope.Timeout = 60;
 configureTerminator(scope,"LF");
 
 % Number of packets (frames) to capture
-numFrames = 2500;
+numFrames = 1250;
 
 % Number of samples stored per packet
 recordLength = 250000;
@@ -31,9 +31,11 @@ verticalScale = 0.5;
 % -------------------------------
 % MAT FILE SETUP
 % -------------------------------
-filename = 'E:\Thesis\thesis_code\data\oscilloscope\ethernet_packets_10001_12500.mat';
+filename = 'E:\Thesis\thesis_code\data\oscilloscope\10Mbps\air\ethernet_packets_1250_10cm.mat';
 % % % filename = 'E:\Thesis\thesis_code\data\oscilloscope\reference_packet.mat';
-
+if isfile(filename)
+    error('File already exists: %s\nAborting to prevent overwrite.', filename);
+end
 
 % Initialize data structure
 packets = zeros(recordLength, numFrames);  % preallocate for speed
@@ -87,17 +89,19 @@ try
     % TRIGGER CONFIGURATION
     % -------------------------------
 
+    % Trigger source is channel 1
+    writeline(scope,'TRIG:A:EDGE:SOU CH1');
+
     % Set trigger type to edge trigger
     writeline(scope,'TRIG:A:TYPE EDGE');
 
-    % Trigger source is channel 1
-    writeline(scope,'TRIG:A:EDGE:SOU CH1');
 
     % Trigger on falling edge (packet start often dips negative)
     writeline(scope,'TRIG:A:EDGE:SLO FALL');
 
     % Set trigger voltage level to -0.5 V
-    writeline(scope,['TRIG:A:LEV ', num2str(triggerLevel)]);
+    writeline(scope,['TRIG:A:LEV:CH1 ', num2str(triggerLevel)]);
+    writeline(scope,'TRIG:A:MOD NORM');
 
     % -------------------------------
     % START ACQUISITION

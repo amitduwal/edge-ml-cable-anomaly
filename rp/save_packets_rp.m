@@ -4,10 +4,13 @@ clear; clc;
 % --- Configuration ---
 IP = '169.254.149.74';
 port = 5000;
-numFrames = 2500;
+numFrames = 1250;
 recordLengthRP = 16384; % Red Pitaya fixed buffer size
 sampleRateRP = 125e6;   % Standard RP sampling rate (125 MHz)
-filename = 'E:\Thesis\thesis_code\data\rp\rp_ethernet_packets_10001_12500.mat';
+filename = 'E:\Thesis\thesis_code\data\rp\10Mbps\air\ethernet_packets_1250_10cm.mat';
+if isfile(filename)
+    error('File already exists: %s\nAborting to prevent overwrite.', filename);
+end
 triggerLevel = -0.25;
 
 % --- Preallocate Data Structure ---

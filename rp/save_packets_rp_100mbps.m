@@ -4,7 +4,7 @@ clear; clc;
 % --- Configuration ---
 IP = '169.254.149.74';
 port = 5000;
-numFrames = 110;
+numFrames = 10;
 recordLengthRP = 16384; % Red Pitaya fixed buffer size
 sampleRateRP = 125e6;   % Standard RP sampling rate (125 MHz)
 filename = 'E:\Thesis\thesis_code\data\rp\rp_ethernet_packets_test_100.mat';
