@@ -7,11 +7,11 @@ port = 5000;
 numFrames = 1250;
 recordLengthRP = 16384; % Red Pitaya fixed buffer size
 sampleRateRP = 125e6;   % Standard RP sampling rate (125 MHz)
-filename = 'E:\Thesis\thesis_code\data\rp\10Mbps\air\ethernet_packets_1250_25cm.mat';
+filename = 'E:\Thesis\thesis_code\data\rp\10Mbps\air\ethernet_packets_1250_15cm.mat';
 if isfile(filename)
     error('File already exists: %s\nAborting to prevent overwrite.', filename);
 end
-triggerLevel = -0.2;
+triggerLevel = -0.25;
 
 % --- Preallocate Data Structure ---
 packetsRP = zeros(recordLengthRP, numFrames);
@@ -32,7 +32,7 @@ try
     writeline(rp, 'ACQ:DEC 1'); % 125MS/s
     writeline(rp, 'ACQ:DATA:FORMAT BIN');
     writeline(rp, 'ACQ:DATA:UNITS VOLTS');
-    writeline(rp, ['ACQ:TRIG:LEV:CH1 ', num2str(triggerLevel)]);
+    writeline(rp, 'ACQ:TRIG:LEV -0.25');
 
     fprintf('Starting capture of %d packets...\n', numFrames);
 

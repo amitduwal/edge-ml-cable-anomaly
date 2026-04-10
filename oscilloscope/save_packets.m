@@ -31,7 +31,7 @@ verticalScale = 0.5;
 % -------------------------------
 % MAT FILE SETUP
 % -------------------------------
-filename = 'E:\Thesis\thesis_code\data\oscilloscope\10Mbps\air\ethernet_packets_1250_10cm.mat';
+filename = 'E:\Thesis\thesis_code\data\oscilloscope\10Mbps\air\ethernet_packets_1250_25cm.mat';
 % % % filename = 'E:\Thesis\thesis_code\data\oscilloscope\reference_packet.mat';
 if isfile(filename)
     error('File already exists: %s\nAborting to prevent overwrite.', filename);
