@@ -1,5 +1,4 @@
 %% 
-%% 
 % -------------------------------
 % Tektronix MSO64B Packet Capture
 % Capture 5 Ethernet packets using FastFrame
@@ -19,7 +18,7 @@ scope.Timeout = 60;
 configureTerminator(scope,"LF");
 
 % Number of packets (frames) to capture
-numFrames = 2500;
+numFrames = 1250;
 
 % Number of samples stored per packet
 recordLength = 250000;
@@ -33,7 +32,7 @@ verticalScale = 0.5;
 % -------------------------------
 % MAT FILE SETUP
 % -------------------------------
-filename = 'E:\Thesis\thesis_code\data\oscilloscope\10Mbps\tapped\ethernet_packets_2500_0.5m.mat';
+filename = 'E:\Thesis\thesis_code\data\oscilloscope\10Mbps\air\ethernet_packets_1250_40cm.mat';
 % % % filename = 'E:\Thesis\thesis_code\data\oscilloscope\reference_packet.mat';
 if isfile(filename)
     error('File already exists: %s\nAborting to prevent overwrite.', filename);

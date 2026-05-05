@@ -7,7 +7,7 @@ port = 5000;
 numFrames = 1250;
 recordLengthRP = 16384; % Red Pitaya fixed buffer size
 sampleRateRP = 125e6;   % Standard RP sampling rate (125 MHz)
-filename = 'E:\Thesis\thesis_code\data\rp\10Mbps\air\ethernet_packets_1250_25cm.mat';
+filename = 'E:\Thesis\thesis_code\data\rp\10Mbps\water\ethernet_packets_1250_5cm.mat';
 if isfile(filename)
     error('File already exists: %s\nAborting to prevent overwrite.', filename);
 end

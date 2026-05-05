@@ -3,8 +3,8 @@ clear; clc;
 
 % --- Configuration: Oscilloscope ---
 scopeIP = '169.254.198.168';
-scopeFile = 'E:\Thesis\thesis_code\data\oscilloscope\100Mbps\air\ethernet_packets_1000_25cm.mat';
-numFrames = 1000;
+scopeFile = 'E:\Thesis\thesis_code\data\oscilloscope\100Mbps\tapped\ethernet_packets_2500_0.5m.mat';
+numFrames = 2500;
 recordLengthScope = 250000; 
 sampleRateScope = 1250e6; 
 scopeVerticalScale = 0.5;
@@ -16,7 +16,7 @@ scopeTriggerLevel = 1.5;
 % --- Configuration: Red Pitaya ---
 rpIP = '169.254.149.74';
 rpPort = 5000;
-rpFile = 'E:\Thesis\thesis_code\data\rp\100Mbps\air\ethernet_packets_1000_25cm.mat';
+rpFile = 'E:\Thesis\thesis_code\data\rp\100Mbps\tapped\ethernet_packets_2500_0.5m.mat';
 recordLengthRP = 16384; 
 if isfile(rpFile)
     error('File already exists: %s\nAborting to prevent overwrite.', filename);
