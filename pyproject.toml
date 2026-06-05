@@ -7,7 +7,9 @@ requires-python = ">=3.12"
 dependencies = [
     "h5py>=3.16.0",
     "matplotlib>=3.10.8",
+    "pandas>=3.0.2",
     "scapy>=2.7.0",
+    "scikit-learn>=1.8.0",
     "scipy>=1.17.1",
 ]
 
